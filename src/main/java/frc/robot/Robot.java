@@ -30,8 +30,10 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private MecanumDrive m_robotDrive;
   private Joystick m_stick;
-  private SlewRateLimiter filter;
-
+  private SlewRateLimiter filterx;
+  private SlewRateLimiter filtery;
+  private SlewRateLimiter filterz;
+  private int autoState;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -39,7 +41,9 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() { 
     // Creates a SlewRateLimiter that limits the rate of change of the signal to 0.5 units per second
-    filter = new SlewRateLimiter(0.5);
+    filterx = new SlewRateLimiter(0.5);
+    filtery = new SlewRateLimiter(0.5);
+    filterz = new SlewRateLimiter(0.5);
     int kFrontLeftChannel = 1;
     int kFrontRightChannel = 2;
     int kRearRightChannel = 3;
@@ -88,16 +92,74 @@ public class Robot extends TimedRobot {
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+    autoState = 1;
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
+
+    switch (autoState) {
+      case 1:
+        // Move Forward 
+        // If hit wall then goto state 2
         break;
-      case kDefaultAuto:
+      case 2:
+       // Stop (at the hub)
+       // if robot has stopped moving then goto state 3
+        break;
+      case 3:
+      // Raise Crane to the height of the hub
+      // If crane is the height of the hub goto state 4
+        break;
+      case 4:
+      // Push Ball
+      // If it has been 1 second then goto state 5
+        break;
+      case 5:
+      // Lower Crane to the bottom
+      // If the crane at the bottom goto state 6
+        break;
+      case 6:
+      //Turn 180 degrees
+      //If robot has turned 180 degrees goto stat 7
+        break;
+      case 7:
+        // Move foward
+        // if we have the ball goto 8
+        break;
+        case 8:
+      // Stop at the ball
+      // if has been 1 second goto 9
+        break;
+        case 9:
+      // Pick up ball
+      // if 4 seconds goto 10
+        break;
+        case 10:
+        // Turn 180 degrees
+        //if robot has turned 180 degrees
+        break;
+      case 11:
+        // Move Forward
+        // if hit the hub
+        break;
+      case 12:
+        //Stop at the hub
+        // if robot has stopped goto 13
+        break;
+      case 13:
+        // Raise Crane to the height of the hub
+        // if the crane height of the hub goto 14
+        break;
+      case 14:
+        // Push ball
+        // if it has been 1 second goto 15
+        break;
+      case 15:
+        // Lower Crane
+        // if crane is at the bottom goto 16
+        break;
       default:
         // Put default auto code here
         break;
@@ -113,7 +175,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-     m_robotDrive.driveCartesian(filter.calculate(m_stick.getX()), -m_stick.getY(), m_stick.getZ());
+     m_robotDrive.driveCartesian(filterx.calculate(m_stick.getX()) ,filtery.calculate(-m_stick.getY()),filterz.calculate(m_stick.getZ()));
     
   }
 
