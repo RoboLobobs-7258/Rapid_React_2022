@@ -4,11 +4,15 @@
 
 package frc.robot;
 
+import static edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
@@ -39,26 +43,33 @@ public class Robot extends TimedRobot {
   private WPI_TalonFX motor1;
   private WPI_TalonFX motor2;
   private WPI_TalonFX motor3;
+  private DoubleSolenoid climbDoublePCM;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
   @Override
   public void robotInit() { 
+    
     // Creates a SlewRateLimiter that limits the rate of change of the signal to 0.5 units per second
     filterx = new SlewRateLimiter(0.5);
     filtery = new SlewRateLimiter(0.5);
     filterz = new SlewRateLimiter(0.5);
+
     int kFrontLeftChannel = 1;
     int kFrontRightChannel = 2;
     int kRearRightChannel = 3;
     int kRearLeftChannel = 4;
     int kJoystickControlChannel = 2;
     int kJoystickMovementChannel = 1;
+    int kclimbFowardChannel = 1;
+    int kclimbBackwardChannel=2;
+    climbDoublePCM = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kclimbFowardChannel, kclimbBackwardChannel);
     
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+    
     WPI_TalonFX frontLeft = new WPI_TalonFX (kFrontLeftChannel);
     WPI_TalonFX rearLeft = new WPI_TalonFX (kRearLeftChannel);
     WPI_TalonFX frontRight = new WPI_TalonFX (kFrontRightChannel);
@@ -189,20 +200,59 @@ public class Robot extends TimedRobot {
 
      if (c_stick.getAButtonPressed())
      {
-       motor1.set(1);
+       motor1.set(Preferences.getDouble("Motor1ForwardSpeed", 1.0));
      }
      else if (c_stick.getBButtonPressed())
      {
-       motor1.set(-1);
+       motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0));
+       
      }
      else 
      {
-       //motor does nothing
+       motor1.set(0);
+     }
+      
+    if (c_stick.getYButtonPressed())
+     {
+       motor2.set(Preferences.getDouble("Motor2ForwardSpeed", 1.0));
+     }
+     else if (c_stick.getXButtonPressed())
+     {
+       motor2.set(Preferences.getDouble("Motor2BackwardSpeed", -1.0));
+     }
+     else 
+     {
+       motor2.set(0);
      }
 
+     if (c_stick.getRightBumperPressed())
+     {
+       motor3.set (Preferences.getDouble("Motor3ForwardSpeed", 1.0));
+     }
+     else if (c_stick.getLeftBumperPressed())
+     {
+       motor3.set (Preferences.getDouble("Motor3BackwardSpeed", -1.0));
+     }
+     else 
+     {
+       motor3.set(0);
+     } 
+     
+    if (c_stick.getRightStickButtonPressed())
+    {
+      climbDoublePCM.set(kForward);
+    } 
+    else if (c_stick.getLeftStickButtonPressed())
+    {
+      climbDoublePCM.set(kReverse);
+    }
+    else
+    {
+      climbDoublePCM.set(kOff);
+    }
   }
-
-  /** This function is called once when the robot is disabled. */
+  /** This function is called 
+   * once when the robot is disabled. */
   @Override
   public void disabledInit() {}
 
