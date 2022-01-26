@@ -4,16 +4,14 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
-import edu.wpi.first.wpilibj.motorcontrol.MotorController;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -30,10 +28,17 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private MecanumDrive m_robotDrive;
   private Joystick m_stick;
+  private XboxController c_stick;
   private SlewRateLimiter filterx;
   private SlewRateLimiter filtery;
   private SlewRateLimiter filterz;
   private int autoState;
+  private int kmotor1Channel = 4;
+  private int kmotor2Channel = 5;
+  private int kmotor3Channel = 6;
+  private WPI_TalonFX motor1;
+  private WPI_TalonFX motor2;
+  private WPI_TalonFX motor3;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -48,14 +53,19 @@ public class Robot extends TimedRobot {
     int kFrontRightChannel = 2;
     int kRearRightChannel = 3;
     int kRearLeftChannel = 4;
-    int kJoystickChannel = 1;
+    int kJoystickControlChannel = 2;
+    int kJoystickMovementChannel = 1;
+    
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
-   WPI_TalonFX frontLeft = new WPI_TalonFX (kFrontLeftChannel);
-   WPI_TalonFX rearLeft = new WPI_TalonFX (kRearLeftChannel);
-   WPI_TalonFX frontRight = new WPI_TalonFX (kFrontRightChannel);
-   WPI_TalonFX rearRight = new  WPI_TalonFX (kRearRightChannel);
+    WPI_TalonFX frontLeft = new WPI_TalonFX (kFrontLeftChannel);
+    WPI_TalonFX rearLeft = new WPI_TalonFX (kRearLeftChannel);
+    WPI_TalonFX frontRight = new WPI_TalonFX (kFrontRightChannel);
+    WPI_TalonFX rearRight = new  WPI_TalonFX (kRearRightChannel);
+    motor1 = new  WPI_TalonFX (kmotor1Channel);
+    motor2 = new  WPI_TalonFX (kmotor2Channel);
+    motor3 = new  WPI_TalonFX (kmotor3Channel);
 
     // Invert the right side motors.
     // You may need to change or remove this to match your robot.
@@ -64,9 +74,9 @@ public class Robot extends TimedRobot {
 
     m_robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
 
-    m_stick = new Joystick(kJoystickChannel);
+    m_stick = new Joystick(kJoystickMovementChannel);
+    c_stick = new XboxController(kJoystickControlChannel);
   }
-
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
    * diagnostics that you want ran during disabled, autonomous, teleoperated and test.
@@ -176,7 +186,20 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
      m_robotDrive.driveCartesian(filterx.calculate(m_stick.getX()) ,filtery.calculate(-m_stick.getY()),filterz.calculate(m_stick.getZ()));
-    
+
+     if (c_stick.getAButtonPressed())
+     {
+       motor1.set(1);
+     }
+     else if (c_stick.getBButtonPressed())
+     {
+       motor1.set(-1);
+     }
+     else 
+     {
+       //motor does nothing
+     }
+
   }
 
   /** This function is called once when the robot is disabled. */

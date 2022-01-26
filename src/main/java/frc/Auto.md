@@ -12,4 +12,4 @@
 12. Stop at the hub
 13. Raise Crane to the height of the hub
 14. Push ball
-15. Lower Crane
+15. Lower 
