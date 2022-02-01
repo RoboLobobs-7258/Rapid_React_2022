@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import com.kauailabs.navx.frc.AHRS;
+
 import static edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -13,7 +15,9 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Preferences;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -44,12 +48,17 @@ public class Robot extends TimedRobot {
   private WPI_TalonFX motor2;
   private WPI_TalonFX motor3;
   private DoubleSolenoid climbDoublePCM;
+  private AHRS ahrs;
+  private Timer auto_timer;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
   @Override
   public void robotInit() { 
+
+    Timer auto_timer = new Timer();
+    ahrs = new AHRS(SPI.Port.kMXP); 
     
     // Creates a SlewRateLimiter that limits the rate of change of the signal to 0.5 units per second
     filterx = new SlewRateLimiter(0.5);
@@ -114,71 +123,87 @@ public class Robot extends TimedRobot {
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
     autoState = 1;
+    
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-
     switch (autoState) {
       case 1:
         // Move Forward 
+        m_robotDrive.driveCartesian(0,1,0);
         // If hit wall then goto state 2
         break;
       case 2:
        // Stop (at the hub)
+       m_robotDrive.driveCartesian(0,0,0);
        // if robot has stopped moving then goto state 3
         break;
       case 3:
       // Raise Crane to the height of the hub
+      motor1.set(Preferences.getDouble("Motor1ForwardSpeed", 1.0));
       // If crane is the height of the hub goto state 4
         break;
       case 4:
       // Push Ball
+       motor2.set(Preferences.getDouble("Motor2ForwardSpeed", 1.0));
       // If it has been 1 second then goto state 5
         break;
       case 5:
       // Lower Crane to the bottom
+      motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0));
       // If the crane at the bottom goto state 6
         break;
       case 6:
       //Turn 180 degrees
+       m_robotDrive.driveCartesian(0,0,-1);
       //If robot has turned 180 degrees goto stat 7
         break;
       case 7:
         // Move foward
+       m_robotDrive.driveCartesian(0,1,0);
         // if we have the ball goto 8
         break;
         case 8:
       // Stop at the ball
+       m_robotDrive.driveCartesian(0,0,0);
       // if has been 1 second goto 9
         break;
         case 9:
       // Pick up ball
+       motor3.set(Preferences.getDouble("Motor3ForwardSpeed", 1.0));
       // if 4 seconds goto 10
         break;
         case 10:
         // Turn 180 degrees
+         m_robotDrive.driveCartesian(0,0,-1);
         //if robot has turned 180 degrees
         break;
       case 11:
         // Move Forward
+        m_robotDrive.driveCartesian(0,1,0);
+
         // if hit the hub
         break;
       case 12:
         //Stop at the hub
+      m_robotDrive.driveCartesian(0,0,0);
         // if robot has stopped goto 13
         break;
       case 13:
         // Raise Crane to the height of the hub
+      motor1.set(Preferences.getDouble("Motor1ForwardSpeed", 1.0)); 
         // if the crane height of the hub goto 14
         break;
       case 14:
         // Push ball
+        motor2.set(Preferences.getDouble("Motor2ForwardSpeed", 1.0));
         // if it has been 1 second goto 15
         break;
       case 15:
         // Lower Crane
+        motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0));
         // if crane is at the bottom goto 16
         break;
       default:
@@ -196,7 +221,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-     m_robotDrive.driveCartesian(filterx.calculate(m_stick.getX()) ,filtery.calculate(-m_stick.getY()),filterz.calculate(m_stick.getZ()));
+     m_robotDrive.driveCartesian(filterx.calculate(m_stick.getX()) ,filtery.calculate(-m_stick.getY()),filterz.calculate(m_stick.getZ()), ahrs.getAngle());
 
      if (c_stick.getAButtonPressed())
      {
