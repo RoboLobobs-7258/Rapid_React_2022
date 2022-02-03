@@ -57,18 +57,18 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() { 
 
-    Timer auto_timer = new Timer();
+    auto_timer = new Timer();
     ahrs = new AHRS(SPI.Port.kMXP); 
     
     // Creates a SlewRateLimiter that limits the rate of change of the signal to 0.5 units per second
-    filterx = new SlewRateLimiter(0.5);
-    filtery = new SlewRateLimiter(0.5);
-    filterz = new SlewRateLimiter(0.5);
+    filterx = new SlewRateLimiter(Preferences.getDouble("XRateLimit", 0.5));
+    filtery = new SlewRateLimiter(Preferences.getDouble("yRateLimit", 0.5));
+    filterz = new SlewRateLimiter(Preferences.getDouble("ZRateLimit", 0.5));
 
-    int kFrontLeftChannel = 1;
-    int kFrontRightChannel = 2;
-    int kRearRightChannel = 3;
-    int kRearLeftChannel = 4;
+    int kFrontLeftChannel = 3;
+    int kFrontRightChannel = 0;
+    int kRearRightChannel = 1;
+    int kRearLeftChannel = 2;
     int kJoystickControlChannel = 2;
     int kJoystickMovementChannel = 1;
     int kclimbFowardChannel = 1;
@@ -129,82 +129,232 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    boolean enter = true;
+    
     switch (autoState) {
       case 1:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Move Forward 
-        m_robotDrive.driveCartesian(0,1,0);
+        m_robotDrive.driveCartesian(0,1,Preferences.getDouble("MovingForwardSpeed", 1),0);
         // If hit wall then goto state 2
+        if (auto_timer.get() >1)
+        { 
+          autoState = 2;
+          enter = true;
+        }
         break;
       case 2:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
        // Stop (at the hub)
        m_robotDrive.driveCartesian(0,0,0);
        // if robot has stopped moving then goto state 3
+       if (auto_timer.get() >.1)
+        { 
+          autoState = 3;
+          enter = true;
+        }
         break;
       case 3:
+       if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
       // Raise Crane to the height of the hub
       motor1.set(Preferences.getDouble("Motor1ForwardSpeed", 1.0));
       // If crane is the height of the hub goto state 4
+      if (auto_timer.get() >1.5)
+        { 
+          autoState = 4;
+          enter = true;
+        }
         break;
       case 4:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
       // Push Ball
        motor2.set(Preferences.getDouble("Motor2ForwardSpeed", 1.0));
       // If it has been 1 second then goto state 5
+      if (auto_timer.get() > Preferences.getDouble("PushBallTime", 1.0))
+        { 
+          autoState = 5;
+          enter = true;
+        }
         break;
       case 5:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
       // Lower Crane to the bottom
       motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0));
       // If the crane at the bottom goto state 6
+      if (auto_timer.get() > Preferences.getDouble("CraneDownTime", 1.0))
+        { 
+          autoState = 6;
+          enter = true;
+        }
         break;
       case 6:
+     if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
       //Turn 180 degrees
-       m_robotDrive.driveCartesian(0,0,-1);
+       m_robotDrive.driveCartesian(0,0, Preferences.getDouble("Turning180speed", -1));
       //If robot has turned 180 degrees goto stat 7
+      if (auto_timer.get() > Preferences.getDouble("Turning180Time", 1.0))
+        { 
+          autoState = 7;
+          enter = true;
+        }
         break;
       case 7:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Move foward
-       m_robotDrive.driveCartesian(0,1,0);
+       m_robotDrive.driveCartesian(0, Preferences.getDouble("MovingForwardSpeed", 1),0);
         // if we have the ball goto 8
+        if (auto_timer.get() >1)
+        { 
+          autoState = 8;
+          enter = true;
+        }
         break;
         case 8:
+        if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
       // Stop at the ball
        m_robotDrive.driveCartesian(0,0,0);
       // if has been 1 second goto 9
+      if (auto_timer.get() > Preferences.getDouble("StopAtTheBallTime", 1.0))
+        { 
+          autoState = 9;
+          enter = true;
+        }
         break;
         case 9:
+        if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
       // Pick up ball
        motor3.set(Preferences.getDouble("Motor3ForwardSpeed", 1.0));
       // if 4 seconds goto 10
+      if (auto_timer.get() > Preferences.getDouble("PickUpBallTime", 1.0))
+        { 
+          autoState = 10;
+          enter = true;
+        }
         break;
         case 10:
+        if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Turn 180 degrees
-         m_robotDrive.driveCartesian(0,0,-1);
+         m_robotDrive.driveCartesian(0,0,Preferences.getDouble("Turning180speed", -1));
         //if robot has turned 180 degrees
+        if (auto_timer.get() > Preferences.getDouble("Turning180Time", 1.0))
+        { 
+          autoState = 11;
+          enter = true;
+        }
         break;
       case 11:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Move Forward
-        m_robotDrive.driveCartesian(0,1,0);
-
+        m_robotDrive.driveCartesian(0, Preferences.getDouble("MovingForwardSpeed", 1),0);
         // if hit the hub
+        if (auto_timer.get() >1)
+        { 
+          autoState = 12;
+        }
         break;
-      case 12:
+        case 12:
+        if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         //Stop at the hub
       m_robotDrive.driveCartesian(0,0,0);
         // if robot has stopped goto 13
+        if (auto_timer.get() >.1)
+        { 
+          autoState = 13;
+          enter = true;
+        }
         break;
       case 13:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Raise Crane to the height of the hub
       motor1.set(Preferences.getDouble("Motor1ForwardSpeed", 1.0)); 
         // if the crane height of the hub goto 14
+        if (auto_timer.get() > Preferences.getDouble("CraneUpTime", 1.0))
+        { 
+          autoState = 14;
+          enter = true;
+        }
         break;
       case 14:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Push ball
-        motor2.set(Preferences.getDouble("Motor2ForwardSpeed", 1.0));
+        motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0)); 
         // if it has been 1 second goto 15
+        if (auto_timer.get() > Preferences.getDouble("PushBallTime", 1.0))
+        { 
+          autoState = 15;
+          enter = true;
+        }
         break;
       case 15:
+      if (enter == true) 
+      {
+        auto_timer.reset();
+        enter = false;
+      }
         // Lower Crane
-        motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0));
+        motor1.set(Preferences.getDouble("Motor1BackwardSpeed", -1.0)); 
         // if crane is at the bottom goto 16
+        if (auto_timer.get() > Preferences.getDouble("CraneDownTime", 1.0))
+        { 
+          autoState = 16;
+          enter = true;
+        }
         break;
       default:
         // Put default auto code here
